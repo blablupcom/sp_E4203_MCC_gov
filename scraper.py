@@ -86,9 +86,10 @@ def convert_mth_strings ( mth_string ):
 #### VARIABLES 1.0
 
 entity_id = "E4203_MCC_gov"
-url = "http://www.manchester.gov.uk/open/downloads/download/33/expenditure_exceeding_500_2015_2016"
+urls = ['http://www.manchester.gov.uk/open/downloads/download/33/expenditure_exceeding_500_2015_2016', 'http://www.manchester.gov.uk/open/downloads/73/archive']
 errors = 0
 data = []
+url = 'http://example.com'
 
 
 #### READ HTML 1.0
@@ -98,18 +99,44 @@ soup = BeautifulSoup(html, 'lxml')
 
 #### SCRAPE DATA
 
-block = soup.find('ul', 'download_list')
-links = block.find_all('li')
-for link in links:
-    csvfiles_html = urllib2.urlopen(link.a['href'])
-    sp = BeautifulSoup(csvfiles_html, 'lxml')
-    blocks_download = sp.find('div', 'download_indent')
-    url = blocks_download.find('h4').find('a')['href']
-    csvMth = blocks_download.find('h4').find('a').text.split(' ')[-2][:3]
-    csvYr = blocks_download.find('h4').find('a').text.split(' ')[-1]
-    csvMth = convert_mth_strings(csvMth.upper())
-    todays_date = str(datetime.now())
-    data.append([csvYr, csvMth, url])
+for url in urls:
+    html = urllib2.urlopen(url)
+    soup = BeautifulSoup(html, 'lxml')
+    try:
+        block = soup.find('ul', 'download_list')
+        links = block.find_all('li')
+        for link in links:
+            csvfiles_html = urllib2.urlopen(link.a['href'])
+            sp = BeautifulSoup(csvfiles_html, 'lxml')
+            blocks_download = sp.find('div', 'download_indent')
+            url = blocks_download.find('h4').find('a')['href']
+            csvMth = blocks_download.find('h4').find('a').text.split(' ')[-2][:3]
+            csvYr = blocks_download.find('h4').find('a').text.split(' ')[-1]
+            csvMth = convert_mth_strings(csvMth.upper())
+            todays_date = str(datetime.now())
+            data.append([csvYr, csvMth, url])
+    except:
+        try:
+            block = soup.find('div', id = 'content')
+            blocklinks = block.find_all('div', 'download_indent')
+            for blocklink in blocklinks:
+                for link in blocklink.find_all('a'):
+                    text_link = ''
+                    try:
+                        text_link = link.text
+                    except: pass
+                    if text_link:
+                        csvfiles_html = urllib2.urlopen(link['href'])
+                        sp = BeautifulSoup(csvfiles_html, 'lxml')
+                        blocks_download = sp.find('div', 'download_indent')
+                        url = blocks_download.find('h4').find('a')['href']
+                        csvMth = blocks_download.find('h4').find('a').text.split(' ')[-2][:3]
+                        csvYr = blocks_download.find('h4').find('a').text.split(' ')[-1]
+                        csvMth = convert_mth_strings(csvMth.upper())
+                        todays_date = str(datetime.now())
+                        data.append([csvYr, csvMth, url])
+        except: pass
+
 
 
 #### STORE DATA 1.0
